@@ -7,8 +7,9 @@ import {
 } from "@whiskeysockets/baileys";
 import NodeCache from "node-cache";
 import pino from "pino";
-import { salvarMensagem } from "./db.js";
 import dotenv from "dotenv";
+import qrcode from "qrcode-terminal";
+import { salvarMensagem } from "./db.js";
 
 dotenv.config();
 
@@ -28,7 +29,7 @@ const startSock = async () => {
     logger: pino({ level: "silent" }),
     auth: {
       creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
+      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
     },
     msgRetryCounterCache: new NodeCache(),
     generateHighQualityLinkPreview: true,
@@ -38,10 +39,18 @@ const startSock = async () => {
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
-    if (connection === "open") {
-      console.log("✅ Conectado com sucesso ao WhatsApp (Railway)!");
+  sock.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr) {
+      console.log("🔑 QR Code recebido. Escaneie para conectar:");
+      qrcode.generate(qr, { small: true });
     }
+
+    if (connection === "open") {
+      console.log("✅ Conectado com sucesso ao WhatsApp!");
+    }
+
     if (connection === "close") {
       const shouldReconnect =
         lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
@@ -76,6 +85,7 @@ const startSock = async () => {
         relevancia: "Alta",
         datahora: timestamp
       });
+      console.log("✅ Mensagem salva no banco com sucesso!");
     } catch (err) {
       console.error("❌ Erro ao salvar mensagem no banco:", err);
     }
