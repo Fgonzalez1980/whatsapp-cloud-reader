@@ -1,0 +1,16 @@
+{
+  "name": "whatsapp-cloud-reader",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.1",
+    "dotenv": "^17.2.0",
+    "node-cache": "^5.1.2",
+    "pg": "^8.11.3",
+    "pino": "^8.14.1"
+  }
+}
