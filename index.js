@@ -7,9 +7,9 @@ import {
 } from "@whiskeysockets/baileys";
 import NodeCache from "node-cache";
 import pino from "pino";
+import { salvarMensagem } from "./db.js";
 import dotenv from "dotenv";
 import qrcode from "qrcode-terminal";
-import { salvarMensagem } from "./db.js";
 
 dotenv.config();
 
@@ -29,7 +29,7 @@ const startSock = async () => {
     logger: pino({ level: "silent" }),
     auth: {
       creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
+      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
     },
     msgRetryCounterCache: new NodeCache(),
     generateHighQualityLinkPreview: true,
