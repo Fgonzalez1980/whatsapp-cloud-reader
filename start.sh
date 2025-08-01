@@ -1,4 +1,4 @@
 #!/bin/bash
+echo "🚀 Iniciando aplicação WhatsApp Cloud Reader..."
 node index.js
-# impede que o container Railway morra
 tail -f /dev/null
