@@ -93,3 +93,6 @@ const startSock = async () => {
 };
 
 startSock();
+
+// 🔄 Garante que o container Railway continue vivo
+setInterval(() => {}, 1 << 30);
