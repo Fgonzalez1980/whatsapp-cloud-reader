@@ -13,6 +13,7 @@ import qrcode from "qrcode-terminal";
 
 dotenv.config();
 
+// 🧭 Mapeamento dos grupos monitorados
 const gruposMap = {
   "5511956960045-1587390469@g.us": "🆓🆓  BR Angels Membros Investidores 🚀🚀",
   "5511993804455-1552131955@g.us": "AvantiNews",
@@ -26,7 +27,7 @@ const startSock = async () => {
 
   const sock = makeWASocket({
     version,
-    logger: pino({ level: "silent" }),
+    logger: pino({ level: "info" }), // <-- temporariamente ativado para diagnóstico no Railway
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
@@ -67,7 +68,11 @@ const startSock = async () => {
     const grupoNome = gruposMap[grupoId];
     if (!grupoNome) return;
 
-    const texto = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+    const texto =
+      msg.message.conversation ||
+      msg.message.extendedTextMessage?.text ||
+      "";
+
     if (!texto.includes("http")) return;
 
     const autor = msg.key.participant || "desconhecido";
