@@ -13,7 +13,7 @@ import qrcode from "qrcode-terminal";
 
 dotenv.config();
 
-// 🧭 Mapeamento dos grupos monitorados
+// 🧭 Grupos monitorados
 const gruposMap = {
   "5511956960045-1587390469@g.us": "🆓🆓  BR Angels Membros Investidores 🚀🚀",
   "5511993804455-1552131955@g.us": "AvantiNews",
@@ -27,7 +27,7 @@ const startSock = async () => {
 
   const sock = makeWASocket({
     version,
-    logger: pino({ level: "info" }), // Modo diagnóstico ativado
+    logger: pino({ level: "info" }), // 🔎 logs ativados temporariamente
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
@@ -62,30 +62,21 @@ const startSock = async () => {
 
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
-    console.log("🟡 Mensagem recebida:", JSON.stringify(msg, null, 2));
-
-    if (!msg?.message || !msg.key.remoteJid.endsWith("@g.us")) return;
+    if (!msg || !msg.message || !msg.key.remoteJid?.endsWith("@g.us")) return;
 
     const grupoId = msg.key.remoteJid;
-    const grupoNome = gruposMap[grupoId] || "Grupo desconhecido";
+    const grupoNome = gruposMap[grupoId];
+    if (!grupoNome) return;
 
+    // 🔒 Ignora mensagens que não sejam texto ou texto estendido
     const texto =
-      msg.message.conversation ||
-      msg.message.extendedTextMessage?.text ||
-      msg.message.imageMessage?.caption ||
-      msg.message.videoMessage?.caption ||
-      "";
+      msg.message?.conversation ||
+      msg.message?.extendedTextMessage?.text;
 
-    console.log(`🔍 Grupo: ${grupoNome} (${grupoId})`);
-    console.log(`🔍 Conteúdo: ${texto}`);
-
-    if (!texto.includes("http")) {
-      console.log("⛔ Ignorado: não contém link.");
-      return;
-    }
+    if (!texto || !texto.includes("http")) return;
 
     const autor = msg.key.participant || "desconhecido";
-    const id = `${msg.key.remoteJid}-${msg.key.id}`;
+    const id = `${grupoId}-${msg.key.id}`;
     const timestamp = new Date((msg.messageTimestamp || Date.now()) * 1000);
 
     console.log(`📩 Mensagem com link de "${grupoNome}": ${texto}`);
