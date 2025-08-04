@@ -27,7 +27,7 @@ const startSock = async () => {
 
   const sock = makeWASocket({
     version,
-    logger: pino({ level: "info" }), // log para diagnóstico
+    logger: pino({ level: "info" }), // Modo diagnóstico ativado
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
@@ -62,24 +62,27 @@ const startSock = async () => {
 
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
-
-    // Log completo da mensagem bruta recebida
-    console.log("📥 Mensagem recebida bruta:", JSON.stringify(msg, null, 2));
+    console.log("🟡 Mensagem recebida:", JSON.stringify(msg, null, 2));
 
     if (!msg?.message || !msg.key.remoteJid.endsWith("@g.us")) return;
 
     const grupoId = msg.key.remoteJid;
-    const grupoNome = gruposMap[grupoId];
-    if (!grupoNome) return;
+    const grupoNome = gruposMap[grupoId] || "Grupo desconhecido";
 
     const texto =
       msg.message.conversation ||
       msg.message.extendedTextMessage?.text ||
-      msg.message?.ephemeralMessage?.message?.extendedTextMessage?.text ||
-      msg.message?.viewOnceMessage?.message?.extendedTextMessage?.text ||
+      msg.message.imageMessage?.caption ||
+      msg.message.videoMessage?.caption ||
       "";
 
-    if (!texto.includes("http")) return;
+    console.log(`🔍 Grupo: ${grupoNome} (${grupoId})`);
+    console.log(`🔍 Conteúdo: ${texto}`);
+
+    if (!texto.includes("http")) {
+      console.log("⛔ Ignorado: não contém link.");
+      return;
+    }
 
     const autor = msg.key.participant || "desconhecido";
     const id = `${msg.key.remoteJid}-${msg.key.id}`;
@@ -87,20 +90,15 @@ const startSock = async () => {
 
     console.log(`📩 Mensagem com link de "${grupoNome}": ${texto}`);
 
-    const payload = {
-      id,
-      grupo: grupoNome,
-      mensagem: texto,
-      fonte: "Grupo WhatsApp",
-      relevancia: "Alta",
-      datahora: timestamp
-    };
-
-    // Log do payload enviado ao banco
-    console.log("📤 Payload enviado ao banco:", payload);
-
     try {
-      await salvarMensagem(payload);
+      await salvarMensagem({
+        id,
+        grupo: grupoNome,
+        mensagem: texto,
+        fonte: "Grupo WhatsApp",
+        relevancia: "Alta",
+        datahora: timestamp
+      });
       console.log("✅ Mensagem salva no banco com sucesso!");
     } catch (err) {
       console.error("❌ Erro ao salvar mensagem no banco:", err);
