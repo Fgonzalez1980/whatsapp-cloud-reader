@@ -15,7 +15,6 @@ dotenv.config();
 
 // 🧭 Lista de grupos que o bot vai monitorar
 const gruposMap = {
-  "5511956960045-1587390469@g.us": "🆓🆓 BR Angels Membros Investidores 🚀🚀",
   "5511993804455-1552131955@g.us": "AvantiNews",
   "557999299044-1571880878@g.us": "Subs /MarketP / Payments",
   "120363168958645796@g.us": "Pay Insights 🚀💲",
