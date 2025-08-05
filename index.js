@@ -13,9 +13,9 @@ import qrcode from "qrcode-terminal";
 
 dotenv.config();
 
-// 🧭 Grupos monitorados
+// 🧭 Lista de grupos que o bot vai monitorar
 const gruposMap = {
-  "5511956960045-1587390469@g.us": "🆓🆓  BR Angels Membros Investidores 🚀🚀",
+  "5511956960045-1587390469@g.us": "🆓🆓 BR Angels Membros Investidores 🚀🚀",
   "5511993804455-1552131955@g.us": "AvantiNews",
   "557999299044-1571880878@g.us": "Subs /MarketP / Payments",
   "120363168958645796@g.us": "Pay Insights 🚀💲",
@@ -27,7 +27,7 @@ const startSock = async () => {
 
   const sock = makeWASocket({
     version,
-    logger: pino({ level: "info" }), // 🔎 logs ativados temporariamente
+    logger: pino({ level: "info" }), // Log detalhado para debug
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
@@ -62,24 +62,39 @@ const startSock = async () => {
 
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
-    if (!msg || !msg.message || !msg.key.remoteJid?.endsWith("@g.us")) return;
+
+    // Garante que é de um grupo
+    if (!msg?.message || !msg.key.remoteJid.endsWith("@g.us")) return;
 
     const grupoId = msg.key.remoteJid;
     const grupoNome = gruposMap[grupoId];
-    if (!grupoNome) return;
 
-    // 🔒 Ignora mensagens que não sejam texto ou texto estendido
+    // Se não for um dos grupos mapeados, ignora
+    if (!grupoNome) {
+      console.log(`⏩ Mensagem ignorada de grupo não monitorado: ${grupoId}`);
+      return;
+    }
+
+    // Extrai texto
     const texto =
-      msg.message?.conversation ||
-      msg.message?.extendedTextMessage?.text;
+      msg.message.conversation ||
+      msg.message.extendedTextMessage?.text ||
+      msg.message.imageMessage?.caption ||
+      msg.message.videoMessage?.caption ||
+      "";
 
-    if (!texto || !texto.includes("http")) return;
+    console.log(`📥 Mensagem recebida de "${grupoNome}": ${texto || "[sem texto]"}`);
 
+    // Se não tiver link, não grava, mas mantém log
+    if (!texto.includes("http")) {
+      console.log(`⏩ Ignorada: mensagem sem link em "${grupoNome}"`);
+      return;
+    }
+
+    // Se tiver link, salva no banco
     const autor = msg.key.participant || "desconhecido";
-    const id = `${grupoId}-${msg.key.id}`;
+    const id = `${msg.key.remoteJid}-${msg.key.id}`;
     const timestamp = new Date((msg.messageTimestamp || Date.now()) * 1000);
-
-    console.log(`📩 Mensagem com link de "${grupoNome}": ${texto}`);
 
     try {
       await salvarMensagem({
@@ -99,5 +114,5 @@ const startSock = async () => {
 
 startSock();
 
-// 🔄 Garante que o container Railway continue vivo
+// 🔄 Mantém container Railway vivo
 setInterval(() => {}, 1 << 30);
